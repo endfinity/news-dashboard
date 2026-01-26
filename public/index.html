@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>US News Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-root">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="logo">US News</h1>
+          <button
+            id="menu-toggle"
+            class="menu-toggle"
+            type="button"
+            aria-label="Toggle navigation menu"
+          >
+            ⟸
+          </button>
+        </div>
+        <p class="sidebar-section-title">Browse by topic</p>
+        <nav class="categories" id="category-list">
+          <button data-category="general" class="category-button active">
+            <span class="category-icon" aria-hidden="true">🗞️</span>
+            <span class="category-label">Top Stories</span>
+          </button>
+          <button data-category="business" class="category-button">
+            <span class="category-icon" aria-hidden="true">📈</span>
+            <span class="category-label">Business</span>
+          </button>
+          <button data-category="technology" class="category-button">
+            <span class="category-icon" aria-hidden="true">🧠</span>
+            <span class="category-label">Technology</span>
+          </button>
+          <button data-category="health" class="category-button">
+            <span class="category-icon" aria-hidden="true">🩺</span>
+            <span class="category-label">Health</span>
+          </button>
+          <button data-category="science" class="category-button">
+            <span class="category-icon" aria-hidden="true">🧪</span>
+            <span class="category-label">Science</span>
+          </button>
+          <button data-category="sports" class="category-button">
+            <span class="category-icon" aria-hidden="true">🏅</span>
+            <span class="category-label">Sports</span>
+          </button>
+          <button data-category="entertainment" class="category-button">
+            <span class="category-icon" aria-hidden="true">🎧</span>
+            <span class="category-label">Entertainment</span>
+          </button>
+          <button data-category="saved" class="category-button">
+            <span class="category-icon" aria-hidden="true">🔖</span>
+            <span class="category-label">Saved</span>
+          </button>
+        </nav>
+      </aside>
+      <main class="content">
+        <header class="content-header">
+          <div class="content-header-main">
+            <h2 id="current-category-title">Top Stories</h2>
+            <span id="category-badge" class="category-badge">Top Stories</span>
+            <span id="article-count" class="article-count"></span>
+          </div>
+          <div class="content-header-controls">
+            <form id="search-form" class="search-form" autocomplete="off">
+              <input
+                id="search-input"
+                class="search-input"
+                type="search"
+                placeholder="Search headlines..."
+                aria-label="Search headlines"
+              />
+            </form>
+            <select id="source-filter" class="source-filter" aria-label="Filter by source">
+              <option value="all">All sources</option>
+            </select>
+            <label class="toggle-chip">
+              <input type="checkbox" id="major-us-toggle" />
+              <span class="toggle-chip-label">US major outlets only</span>
+            </label>
+            <div class="time-filter-group" aria-label="Filter by recency">
+              <button type="button" class="time-filter-button time-filter-button-active" data-time-filter="all">
+                All time
+              </button>
+              <button type="button" class="time-filter-button" data-time-filter="24h">24 hours</button>
+              <button type="button" class="time-filter-button" data-time-filter="7d">7 days</button>
+            </div>
+          </div>
+        </header>
+        <section id="status" class="status status-hidden"></section>
+        <section id="articles" class="articles"></section>
+        <button id="load-more" class="load-more-button" type="button">Load more</button>
+      </main>
+    </div>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+  </html>
