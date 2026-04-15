@@ -35,6 +35,10 @@ const uiState = {
   timeFilter: 'all'
 };
 
+function isSavedViewActive() {
+  return uiState.currentCategory === 'saved';
+}
+
 const STORAGE_KEY = 'news-dashboard.saved-articles';
 const LAST_CATEGORY_KEY = 'news-dashboard.last-category';
 
