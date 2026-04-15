@@ -38,6 +38,23 @@ const uiState = {
 const STORAGE_KEY = 'news-dashboard.saved-articles';
 const LAST_CATEGORY_KEY = 'news-dashboard.last-category';
 
+function safeLocalStorageGet(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch (error) {
+    console.error(`Failed to get item from storage for key: ${key}`, error);
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    console.error(`Failed to set item in storage for key: ${key}`, error);
+  }
+}
+
 const MAJOR_US_SOURCES = [
   'CNN',
   'Fox News',
@@ -53,14 +70,15 @@ const MAJOR_US_SOURCES = [
 ].map((name) => name.toLowerCase());
 
 function loadSavedArticles() {
+  const raw = safeLocalStorageGet(STORAGE_KEY);
+  if (!raw) return [];
+
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed;
   } catch (error) {
-    console.error('Failed to load saved articles from storage', error);
+    console.error('Failed to parse saved articles from storage', error);
     return [];
   }
 }
@@ -68,33 +86,20 @@ function loadSavedArticles() {
 let savedArticles = loadSavedArticles();
 
 function persistSavedArticles() {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(savedArticles));
-  } catch (error) {
-    console.error('Failed to persist saved articles', error);
-  }
+  safeLocalStorageSet(STORAGE_KEY, JSON.stringify(savedArticles));
 }
 
 function loadLastCategory() {
-  try {
-    const value = window.localStorage.getItem(LAST_CATEGORY_KEY);
-    if (!value) return 'general';
-    if (CATEGORY_TITLES[value] || value === 'saved') {
-      return value;
-    }
-    return 'general';
-  } catch (error) {
-    console.error('Failed to load last category from storage', error);
-    return 'general';
+  const value = safeLocalStorageGet(LAST_CATEGORY_KEY);
+  if (!value) return 'general';
+  if (CATEGORY_TITLES[value] || value === 'saved') {
+    return value;
   }
+  return 'general';
 }
 
 function persistLastCategory(category) {
-  try {
-    window.localStorage.setItem(LAST_CATEGORY_KEY, category);
-  } catch (error) {
-    console.error('Failed to persist last category', error);
-  }
+  safeLocalStorageSet(LAST_CATEGORY_KEY, category);
 }
 
 function isArticleSaved(article) {
