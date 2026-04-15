@@ -298,7 +298,9 @@ function updateSourceFilterOptions(articles) {
   allOption.textContent = 'All sources';
   sourceFilterEl.appendChild(allOption);
 
-  Array.from(uniqueSources)
+  const uniqueSourcesArray = Array.from(uniqueSources);
+
+  uniqueSourcesArray
     .sort()
     .forEach((name) => {
       const option = document.createElement('option');
@@ -307,7 +309,7 @@ function updateSourceFilterOptions(articles) {
       sourceFilterEl.appendChild(option);
     });
 
-  if (Array.from(uniqueSources).includes(previousValue)) {
+  if (uniqueSources.has(previousValue)) {
     sourceFilterEl.value = previousValue;
     uiState.currentSourceFilter = previousValue;
   } else {
