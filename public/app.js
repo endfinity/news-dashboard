@@ -641,3 +641,11 @@ updateMenuToggleIcon();
 
 setActiveCategoryButton(initialCategory);
 fetchHeadlines(initialCategory, { resetPage: true });
+
+// Test exports attached to window
+if (typeof window !== 'undefined' && window.process && window.process.env && window.process.env.NODE_ENV === 'test') {
+  window._setSavedArticlesForTesting = (articles) => {
+    savedArticles = articles;
+  };
+  window.isArticleSaved = isArticleSaved;
+}
