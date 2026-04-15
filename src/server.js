@@ -81,7 +81,6 @@ const metrics = {
 app.set('trust proxy', 1);
 
 if (!NEWSAPI_KEY) {
-  // eslint-disable-next-line no-console
   console.warn('WARNING: NEWSAPI_KEY is not set. API requests will fail until you configure it.');
 }
 
@@ -241,7 +240,6 @@ app.get('/api/headlines', async (req, res) => {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      // eslint-disable-next-line no-console
       console.error('NewsAPI responded with non-OK status', {
         status: response.status,
         statusText: response.statusText,
@@ -276,7 +274,6 @@ app.get('/api/headlines', async (req, res) => {
     res.setHeader('X-Cache', 'MISS');
     res.json(payload);
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error('Error fetching headlines from NewsAPI', {
       message: error.message,
       name: error.name,
@@ -297,6 +294,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
   console.log(`News dashboard server running at http://localhost:${port}`);
 });
