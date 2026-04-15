@@ -20,8 +20,18 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = Number.parseInt(process.env.NEWS_RATE_LIMIT_PER_WINDOW, 10) || 60;
 
 const headlinesCache = new Map();
-let rateLimitWindowStart = Date.now();
-let rateLimitedRequestCount = 0;
+
+// Periodically clean up expired cache entries to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of headlinesCache.entries()) {
+    if (value.expiresAt <= now) {
+      headlinesCache.delete(key);
+    }
+  }
+}, Math.max(CACHE_TTL_MS, 60_000));
+
+const ipRateLimits = new Map();
 
 const metrics = {
   cacheHits: 0,
@@ -75,8 +85,7 @@ app.get('/metrics', (req, res) => {
     rateLimit: {
       windowMs: RATE_LIMIT_WINDOW_MS,
       maxRequestsPerWindow: RATE_LIMIT_MAX_REQUESTS,
-      currentWindowStart: new Date(rateLimitWindowStart).toISOString(),
-      currentWindowCount: rateLimitedRequestCount,
+      trackedIPs: ipRateLimits.size,
       totalRateLimitHits: metrics.rateLimitHits
     },
     headlines: {
@@ -126,18 +135,33 @@ app.get('/api/headlines', async (req, res) => {
 
   metrics.cacheMisses += 1;
 
+  const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
   const now = Date.now();
-  if (now - rateLimitWindowStart > RATE_LIMIT_WINDOW_MS) {
-    rateLimitWindowStart = now;
-    rateLimitedRequestCount = 0;
+  let clientLimitData = ipRateLimits.get(clientIp);
+
+  if (!clientLimitData || now - clientLimitData.windowStart > RATE_LIMIT_WINDOW_MS) {
+    clientLimitData = {
+      windowStart: now,
+      requestCount: 0
+    };
   }
 
-  rateLimitedRequestCount += 1;
+  clientLimitData.requestCount += 1;
+  ipRateLimits.set(clientIp, clientLimitData);
 
-  if (rateLimitedRequestCount > RATE_LIMIT_MAX_REQUESTS) {
+  if (clientLimitData.requestCount > RATE_LIMIT_MAX_REQUESTS) {
     metrics.rateLimitHits += 1;
     res.status(429).json({ error: 'Rate limit exceeded for headlines API. Please try again shortly.' });
     return;
+  }
+
+  // Cleanup old IP entries periodically, when the Map gets too large
+  if (ipRateLimits.size > 1000) {
+    for (const [key, value] of ipRateLimits.entries()) {
+      if (now - value.windowStart > RATE_LIMIT_WINDOW_MS) {
+        ipRateLimits.delete(key);
+      }
+    }
   }
 
   const params = new URLSearchParams({
@@ -219,6 +243,10 @@ app.get('/api/headlines', async (req, res) => {
 
     res.status(500).json({ error: 'Failed to fetch headlines from NewsAPI.' });
   }
+});
+
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
 });
 
 app.get('*', (req, res) => {
