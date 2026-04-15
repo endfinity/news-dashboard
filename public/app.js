@@ -35,6 +35,10 @@ const uiState = {
   timeFilter: 'all'
 };
 
+function isSavedViewActive() {
+  return uiState.currentCategory === 'saved';
+}
+
 const STORAGE_KEY = 'news-dashboard.saved-articles';
 const LAST_CATEGORY_KEY = 'news-dashboard.last-category';
 
@@ -195,7 +199,7 @@ function switchToCategory(category) {
 function getVisibleArticles(baseArticles) {
   let filtered = baseArticles;
 
-  if (uiState.currentCategory === 'saved' && uiState.currentQuery) {
+  if (isSavedViewActive() && uiState.currentQuery) {
     const q = uiState.currentQuery.toLowerCase();
     filtered = filtered.filter((article) => {
       const title = (article.title || '').toLowerCase();
@@ -303,7 +307,7 @@ function updateSourceFilterOptions(articles) {
 }
 
 function updateLoadMoreVisibility() {
-  if (uiState.currentCategory === 'saved') {
+  if (isSavedViewActive()) {
     loadMoreButton.classList.add('load-more-hidden');
     return;
   }
@@ -329,7 +333,7 @@ function renderArticles(articles, { isSavedView = false } = {}) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.textContent =
-      uiState.currentCategory === 'saved'
+      isSavedViewActive()
         ? 'You have no saved articles yet.'
         : 'No articles found for this selection right now.';
     articlesContainer.appendChild(empty);
@@ -469,7 +473,7 @@ async function fetchHeadlines(category, { append = false, resetPage = false } = 
 }
 
 function refreshCurrentView() {
-  if (uiState.currentCategory === 'saved') {
+  if (isSavedViewActive()) {
     renderArticles(savedArticles, { isSavedView: true });
     updateSourceFilterOptions(savedArticles);
     uiState.totalResults = savedArticles.length;
@@ -508,7 +512,7 @@ searchForm.addEventListener('submit', (event) => {
   uiState.currentQuery = (searchInput.value || '').trim();
   uiState.currentPage = 1;
 
-  if (uiState.currentCategory === 'saved') {
+  if (isSavedViewActive()) {
     refreshCurrentView();
   } else {
     fetchHeadlines(uiState.currentCategory, { resetPage: true });
@@ -521,7 +525,7 @@ sourceFilterEl.addEventListener('change', () => {
 });
 
 loadMoreButton.addEventListener('click', () => {
-  if (uiState.currentCategory === 'saved') {
+  if (isSavedViewActive()) {
     return;
   }
 
@@ -559,7 +563,7 @@ articlesContainer.addEventListener('click', (event) => {
   const articleUrl = toggleButton.getAttribute('data-article-url');
   if (!articleUrl) return;
 
-  const pool = uiState.currentCategory === 'saved' ? savedArticles : uiState.currentArticles;
+  const pool = isSavedViewActive() ? savedArticles : uiState.currentArticles;
   const article = pool.find((item) => item.url === articleUrl);
 
   if (article) {
