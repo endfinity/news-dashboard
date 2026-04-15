@@ -14,6 +14,7 @@ const port = process.env.PORT || 3000;
 
 const NEWSAPI_BASE_URL = 'https://newsapi.org/v2/top-headlines';
 const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
+const METRICS_TOKEN = process.env.METRICS_TOKEN;
 
 const CACHE_TTL_MS = Number.parseInt(process.env.NEWS_CACHE_TTL_MS, 10) || 60_000;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -63,6 +64,12 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/metrics', (req, res) => {
+  const token = req.get('X-Metrics-Token');
+  if (!METRICS_TOKEN || token !== METRICS_TOKEN) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
   const snapshot = {
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
