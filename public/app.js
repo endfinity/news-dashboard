@@ -233,25 +233,23 @@ function getVisibleArticles(baseArticles) {
   }
 
   if (uiState.timeFilter !== 'all') {
-    const now = new Date();
+    const nowTime = Date.now();
+    let cutoff = 0;
 
-    filtered = filtered.filter((article) => {
-      if (!article.publishedAt) return false;
-      const publishedDate = new Date(article.publishedAt);
-      if (Number.isNaN(publishedDate.getTime())) return false;
+    if (uiState.timeFilter === '24h') {
+      cutoff = nowTime - 24 * 60 * 60 * 1000;
+    } else if (uiState.timeFilter === '7d') {
+      cutoff = nowTime - 7 * 24 * 60 * 60 * 1000;
+    }
 
-      if (uiState.timeFilter === '24h') {
-        const cutoff = now.getTime() - 24 * 60 * 60 * 1000;
+    if (cutoff > 0) {
+      filtered = filtered.filter((article) => {
+        if (!article.publishedAt) return false;
+        const publishedDate = new Date(article.publishedAt);
+        if (Number.isNaN(publishedDate.getTime())) return false;
         return publishedDate.getTime() >= cutoff;
-      }
-
-      if (uiState.timeFilter === '7d') {
-        const cutoff = now.getTime() - 7 * 24 * 60 * 60 * 1000;
-        return publishedDate.getTime() >= cutoff;
-      }
-
-      return true;
-    });
+      });
+    }
   }
 
   return filtered;
