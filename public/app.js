@@ -23,6 +23,10 @@ const CATEGORY_TITLES = {
   saved: 'Saved articles'
 };
 
+function getCategoryTitle(category) {
+  return CATEGORY_TITLES[category] || 'News';
+}
+
 const uiState = {
   currentCategory: 'general',
   currentPage: 1,
@@ -149,10 +153,10 @@ function setActiveCategoryButton(category) {
     btn.classList.toggle('active', isActive);
   });
 
-  categoryTitleEl.textContent = CATEGORY_TITLES[category] || 'News';
+  categoryTitleEl.textContent = getCategoryTitle(category);
 
   if (categoryBadgeEl) {
-    const label = CATEGORY_TITLES[category] || 'News';
+    const label = getCategoryTitle(category);
     categoryBadgeEl.textContent = label;
 
     categoryBadgeEl.className = 'category-badge';
@@ -406,7 +410,7 @@ async function fetchHeadlines(category, { append = false, resetPage = false } = 
     uiState.currentPage = 1;
   }
 
-  setStatus(`Loading ${CATEGORY_TITLES[category] || 'news'}...`, 'loading');
+  setStatus(`Loading ${getCategoryTitle(category)}...`, 'loading');
 
   if (resetPage) {
     renderSkeletons();
@@ -625,3 +629,8 @@ updateMenuToggleIcon();
 
 setActiveCategoryButton(initialCategory);
 fetchHeadlines(initialCategory, { resetPage: true });
+
+// Export for testing
+if (typeof window !== 'undefined' && window.process && window.process.env && window.process.env.NODE_ENV === 'test') {
+  window.__test_getCategoryTitle = getCategoryTitle;
+}
