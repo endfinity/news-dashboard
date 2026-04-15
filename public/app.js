@@ -66,6 +66,7 @@ function loadSavedArticles() {
 }
 
 let savedArticles = loadSavedArticles();
+let savedArticleUrls = new Set(savedArticles.map((a) => a.url));
 
 function persistSavedArticles() {
   try {
@@ -98,7 +99,7 @@ function persistLastCategory(category) {
 }
 
 function isArticleSaved(article) {
-  return savedArticles.some((saved) => saved.url === article.url);
+  return savedArticleUrls.has(article.url);
 }
 
 function updateMenuToggleIcon() {
@@ -482,8 +483,10 @@ function toggleSavedArticle(article) {
 
   if (isArticleSaved(article)) {
     savedArticles = savedArticles.filter((saved) => saved.url !== article.url);
+    savedArticleUrls.delete(article.url);
   } else {
     savedArticles = [...savedArticles, article];
+    savedArticleUrls.add(article.url);
   }
 
   persistSavedArticles();
