@@ -336,6 +336,7 @@ function updateSourceFilterOptions(articles) {
 }
 
 function updateLoadMoreVisibility() {
+  // Use helper function isSavedViewActive() instead of manual uiState.currentCategory === 'saved' check to centralize logic
   if (isSavedViewActive()) {
     loadMoreButton.classList.add('load-more-hidden');
     return;
