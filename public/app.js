@@ -52,15 +52,32 @@ const MAJOR_US_SOURCES = [
   'Associated Press'
 ].map((name) => name.toLowerCase());
 
-function loadSavedArticles() {
+function safeLocalStorageGet(key) {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    return window.localStorage.getItem(key);
+  } catch (error) {
+    console.error(`Failed to read from local storage (key: ${key})`, error);
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    console.error(`Failed to write to local storage (key: ${key})`, error);
+  }
+}
+
+function loadSavedArticles() {
+  const raw = safeLocalStorageGet(STORAGE_KEY);
+  if (!raw) return [];
+  try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed;
   } catch (error) {
-    console.error('Failed to load saved articles from storage', error);
+    console.error('Failed to parse saved articles from storage', error);
     return [];
   }
 }
@@ -68,33 +85,20 @@ function loadSavedArticles() {
 let savedArticles = loadSavedArticles();
 
 function persistSavedArticles() {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(savedArticles));
-  } catch (error) {
-    console.error('Failed to persist saved articles', error);
-  }
+  safeLocalStorageSet(STORAGE_KEY, JSON.stringify(savedArticles));
 }
 
 function loadLastCategory() {
-  try {
-    const value = window.localStorage.getItem(LAST_CATEGORY_KEY);
-    if (!value) return 'general';
-    if (CATEGORY_TITLES[value] || value === 'saved') {
-      return value;
-    }
-    return 'general';
-  } catch (error) {
-    console.error('Failed to load last category from storage', error);
-    return 'general';
+  const value = safeLocalStorageGet(LAST_CATEGORY_KEY);
+  if (!value) return 'general';
+  if (CATEGORY_TITLES[value] || value === 'saved') {
+    return value;
   }
+  return 'general';
 }
 
 function persistLastCategory(category) {
-  try {
-    window.localStorage.setItem(LAST_CATEGORY_KEY, category);
-  } catch (error) {
-    console.error('Failed to persist last category', error);
-  }
+  safeLocalStorageSet(LAST_CATEGORY_KEY, category);
 }
 
 function isArticleSaved(article) {
