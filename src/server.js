@@ -13,7 +13,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const NEWSAPI_BASE_URL = 'https://newsapi.org/v2/top-headlines';
-const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
 
 const CACHE_TTL_MS = Number.parseInt(process.env.NEWS_CACHE_TTL_MS, 10) || 60_000;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -22,7 +21,7 @@ const RATE_LIMIT_MAX_REQUESTS = Number.parseInt(process.env.NEWS_RATE_LIMIT_PER_
 const headlinesCache = new Map();
 
 // Periodically clean up expired cache entries to prevent memory leaks
-setInterval(() => {
+const cacheCleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [key, value] of headlinesCache.entries()) {
     if (value.expiresAt <= now) {
@@ -30,6 +29,9 @@ setInterval(() => {
     }
   }
 }, Math.max(CACHE_TTL_MS, 60_000));
+
+// Allow clearing the interval for testing
+app.closeCleanupInterval = () => clearInterval(cacheCleanupInterval);
 
 const ipRateLimits = new Map();
 
@@ -43,7 +45,7 @@ const metrics = {
 
 app.set('trust proxy', 1);
 
-if (!NEWSAPI_KEY) {
+if (!process.env.NEWSAPI_KEY) {
   // eslint-disable-next-line no-console
   console.warn('WARNING: NEWSAPI_KEY is not set. API requests will fail until you configure it.');
 }
@@ -65,7 +67,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    hasNewsApiKey: Boolean(NEWSAPI_KEY),
+    hasNewsApiKey: Boolean(process.env.NEWSAPI_KEY),
     environment: process.env.NODE_ENV || 'development'
   };
 
@@ -98,6 +100,8 @@ app.get('/metrics', (req, res) => {
 });
 
 app.get('/api/headlines', async (req, res) => {
+  const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
+
   if (!NEWSAPI_KEY) {
     res.status(500).json({ error: 'NEWSAPI_KEY is not configured on the server.' });
     return;
@@ -253,7 +257,11 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-app.listen(port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`News dashboard server running at http://localhost:${port}`);
-});
+if (process.argv[1] === __filename) {
+  app.listen(port, () => {
+    // eslint-disable-next-line no-console
+    console.log(`News dashboard server running at http://localhost:${port}`);
+  });
+}
+
+export default app;
