@@ -111,14 +111,6 @@ function isArticleSaved(article) {
   return savedArticleUrls.has(article.url);
 }
 
-function isSavedViewActive() {
-  return uiState.currentCategory === 'saved';
-}
-
-function isSavedViewActive() {
-  return uiState.currentCategory === 'saved';
-}
-
 function updateMenuToggleIcon() {
   if (!menuToggleButton) return;
   const isOpen = document.body.classList.contains('sidebar-open');
@@ -321,6 +313,7 @@ function updateSourceFilterOptions(articles) {
 }
 
 function updateLoadMoreVisibility() {
+  // Use helper function isSavedViewActive() instead of manual uiState.currentCategory === 'saved' check to centralize logic
   if (isSavedViewActive()) {
     loadMoreButton.classList.add('load-more-hidden');
     return;
