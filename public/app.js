@@ -51,6 +51,11 @@ function safeLocalStorageGet(key) {
   }
 }
 
+
+function getArticleSourceName(article, defaultName = 'Unknown source') {
+  return article.source && article.source.name ? article.source.name : defaultName;
+}
+
 function safeLocalStorageSet(key, value) {
   try {
     window.localStorage.setItem(key, value);
@@ -111,13 +116,7 @@ function isArticleSaved(article) {
   return savedArticleUrls.has(article.url);
 }
 
-function isSavedViewActive() {
-  return uiState.currentCategory === 'saved';
-}
 
-function isSavedViewActive() {
-  return uiState.currentCategory === 'saved';
-}
 
 function updateMenuToggleIcon() {
   if (!menuToggleButton) return;
@@ -224,14 +223,14 @@ function getVisibleArticles(baseArticles) {
 
   if (uiState.currentSourceFilter !== 'all') {
     filtered = filtered.filter((article) => {
-      const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
+      const sourceName = getArticleSourceName(article);
       return sourceName === uiState.currentSourceFilter;
     });
   }
 
   if (uiState.usMajorOnly) {
     filtered = filtered.filter((article) => {
-      const sourceName = article.source && article.source.name ? article.source.name : '';
+      const sourceName = getArticleSourceName(article, '');
       return MAJOR_US_SOURCES.includes(sourceName.toLowerCase());
     });
   }
@@ -287,7 +286,7 @@ function updateSourceFilterOptions(articles) {
   const uniqueSources = new Set();
 
   articles.forEach((article) => {
-    const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
+    const sourceName = getArticleSourceName(article);
     uniqueSources.add(sourceName);
   });
 
@@ -362,7 +361,7 @@ function renderArticles(articles, { isSavedView = false } = {}) {
     card.className = 'article-card';
 
     const imageUrl = article.urlToImage || '';
-    const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
+    const sourceName = getArticleSourceName(article);
     const saved = isArticleSaved(article);
 
     card.innerHTML = `
@@ -650,6 +649,8 @@ fetchHeadlines(initialCategory, { resetPage: true });
 if (typeof window !== 'undefined' && window.process && window.process.env && window.process.env.NODE_ENV === 'test') {
   window._setSavedArticlesForTesting = (articles) => {
     savedArticles = articles;
+    savedArticleUrls = new Set(savedArticles.map((a) => a.url));
   };
   window.isArticleSaved = isArticleSaved;
+  window.getArticleSourceName = getArticleSourceName;
 }
