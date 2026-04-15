@@ -202,53 +202,76 @@ function switchToCategory(category) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+const createQueryFilter = (query) => {
+  const q = query.toLowerCase();
+  return (article) => {
+    const title = (article.title || '').toLowerCase();
+    const description = (article.description || '').toLowerCase();
+    return title.includes(q) || description.includes(q);
+  };
+};
+
+const createSourceFilter = (filterName) => {
+  return (article) => {
+    const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
+    return sourceName === filterName;
+  };
+};
+
+const createMajorUsFilter = () => {
+  return (article) => {
+    const sourceName = article.source && article.source.name ? article.source.name : '';
+    return MAJOR_US_SOURCES.includes(sourceName.toLowerCase());
+  };
+};
+
+const createTimeFilter = (timeFilter) => {
+  const nowTime = Date.now();
+  let cutoff = 0;
+
+  if (timeFilter === '24h') {
+    cutoff = nowTime - 24 * 60 * 60 * 1000;
+  } else if (timeFilter === '7d') {
+    cutoff = nowTime - 7 * 24 * 60 * 60 * 1000;
+  }
+
+  if (cutoff <= 0) return null;
+
+  return (article) => {
+    if (!article.publishedAt) return false;
+    const publishedDate = new Date(article.publishedAt);
+    if (Number.isNaN(publishedDate.getTime())) return false;
+    return publishedDate.getTime() >= cutoff;
+  };
+};
+
 function getVisibleArticles(baseArticles) {
-  let filtered = baseArticles;
+  const activeFilters = [];
 
   if (isSavedViewActive() && uiState.currentQuery) {
-    const q = uiState.currentQuery.toLowerCase();
-    filtered = filtered.filter((article) => {
-      const title = (article.title || '').toLowerCase();
-      const description = (article.description || '').toLowerCase();
-      return title.includes(q) || description.includes(q);
-    });
+    activeFilters.push(createQueryFilter(uiState.currentQuery));
   }
 
   if (uiState.currentSourceFilter !== 'all') {
-    filtered = filtered.filter((article) => {
-      const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
-      return sourceName === uiState.currentSourceFilter;
-    });
+    activeFilters.push(createSourceFilter(uiState.currentSourceFilter));
   }
 
   if (uiState.usMajorOnly) {
-    filtered = filtered.filter((article) => {
-      const sourceName = article.source && article.source.name ? article.source.name : '';
-      return MAJOR_US_SOURCES.includes(sourceName.toLowerCase());
-    });
+    activeFilters.push(createMajorUsFilter());
   }
 
   if (uiState.timeFilter !== 'all') {
-    const nowTime = Date.now();
-    let cutoff = 0;
-
-    if (uiState.timeFilter === '24h') {
-      cutoff = nowTime - 24 * 60 * 60 * 1000;
-    } else if (uiState.timeFilter === '7d') {
-      cutoff = nowTime - 7 * 24 * 60 * 60 * 1000;
-    }
-
-    if (cutoff > 0) {
-      filtered = filtered.filter((article) => {
-        if (!article.publishedAt) return false;
-        const publishedDate = new Date(article.publishedAt);
-        if (Number.isNaN(publishedDate.getTime())) return false;
-        return publishedDate.getTime() >= cutoff;
-      });
+    const timeFilterFn = createTimeFilter(uiState.timeFilter);
+    if (timeFilterFn) {
+      activeFilters.push(timeFilterFn);
     }
   }
 
-  return filtered;
+  if (activeFilters.length === 0) {
+    return baseArticles;
+  }
+
+  return baseArticles.filter((article) => activeFilters.every((fn) => fn(article)));
 }
 
 function renderSkeletons() {
