@@ -43,3 +43,25 @@ describe('isArticleSaved', () => {
      expect(window.isArticleSaved({})).toBe(false);
   });
 });
+
+describe('getArticleSourceName', () => {
+  it('should return the source name if it exists', () => {
+    const article = { source: { name: 'The New York Times' } };
+    expect(window.getArticleSourceName(article)).toBe('The New York Times');
+  });
+
+  it('should return "Unknown source" if source is undefined', () => {
+    const article = {};
+    expect(window.getArticleSourceName(article)).toBe('Unknown source');
+  });
+
+  it('should return "Unknown source" if source.name is undefined', () => {
+    const article = { source: {} };
+    expect(window.getArticleSourceName(article)).toBe('Unknown source');
+  });
+
+  it('should return "Unknown source" if source is null', () => {
+    const article = { source: null };
+    expect(window.getArticleSourceName(article)).toBe('Unknown source');
+  });
+});
