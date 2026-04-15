@@ -4,3 +4,4 @@
 .github\instructions\codacy.instructions.md
 node_modules/
 .env*.log
+coverage/
