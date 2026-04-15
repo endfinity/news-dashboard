@@ -38,7 +38,7 @@ const uiState = {
 const STORAGE_KEY = 'news-dashboard.saved-articles';
 const LAST_CATEGORY_KEY = 'news-dashboard.last-category';
 
-const MAJOR_US_SOURCES = [
+const MAJOR_US_SOURCES = new Set([
   'CNN',
   'Fox News',
   'The New York Times',
@@ -50,7 +50,7 @@ const MAJOR_US_SOURCES = [
   'USA Today',
   'Reuters',
   'Associated Press'
-].map((name) => name.toLowerCase());
+].map((name) => name.toLowerCase()));
 
 function loadSavedArticles() {
   try {
@@ -214,7 +214,7 @@ function getVisibleArticles(baseArticles) {
   if (uiState.usMajorOnly) {
     filtered = filtered.filter((article) => {
       const sourceName = article.source && article.source.name ? article.source.name : '';
-      return MAJOR_US_SOURCES.includes(sourceName.toLowerCase());
+      return MAJOR_US_SOURCES.has(sourceName.toLowerCase());
     });
   }
 
