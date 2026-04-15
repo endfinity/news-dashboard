@@ -150,7 +150,7 @@ body {
 
 .category-badge {
 	  margin: 0 0 0 0.75rem;
-  display: none;
+  display: inline-flex;
   padding: 0.18rem 0.6rem;
   border-radius: 999px;
   font-size: 0.75rem;

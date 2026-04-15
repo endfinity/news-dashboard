@@ -460,6 +460,10 @@ async function fetchHeadlines(category, { append = false, resetPage = false } = 
   } catch (error) {
     console.error(error);
     setStatus('Failed to load news. Please try again later.', 'error');
+    if (resetPage) {
+      articlesContainer.innerHTML = '';
+      articleCountEl.textContent = '';
+    }
     updateLoadMoreVisibility();
   }
 }
