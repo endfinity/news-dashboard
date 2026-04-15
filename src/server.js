@@ -19,9 +19,45 @@ const CACHE_TTL_MS = Number.parseInt(process.env.NEWS_CACHE_TTL_MS, 10) || 60_00
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = Number.parseInt(process.env.NEWS_RATE_LIMIT_PER_WINDOW, 10) || 60;
 
-const headlinesCache = new Map();
+class LRUCache {
+  constructor(maxSize) {
+    this.maxSize = maxSize;
+    this.cache = new Map();
+  }
 
-// Periodically clean up expired cache entries to prevent memory leaks
+  get(key) {
+    const value = this.cache.get(key);
+    if (value === undefined) return undefined;
+    // Move accessed item to the end (most recently used)
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  set(key, value) {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.maxSize) {
+      // Map preserves insertion order, so the first key is the least recently used
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+
+  delete(key) { return this.cache.delete(key); }
+  has(key) { return this.cache.has(key); }
+  clear() { this.cache.clear(); }
+  keys() { return this.cache.keys(); }
+  values() { return this.cache.values(); }
+  get size() { return this.cache.size; }
+  entries() { return this.cache.entries(); }
+}
+
+// Bounded LRU cache to prevent memory leaks
+const headlinesCache = new LRUCache(1000);
+
+// Periodically clean up expired cache entries
 setInterval(() => {
   const now = Date.now();
   for (const [key, value] of headlinesCache.entries()) {
