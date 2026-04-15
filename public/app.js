@@ -111,14 +111,6 @@ function isArticleSaved(article) {
   return savedArticleUrls.has(article.url);
 }
 
-function isSavedViewActive() {
-  return uiState.currentCategory === 'saved';
-}
-
-function isSavedViewActive() {
-  return uiState.currentCategory === 'saved';
-}
-
 function updateMenuToggleIcon() {
   if (!menuToggleButton) return;
   const isOpen = document.body.classList.contains('sidebar-open');
@@ -650,6 +642,7 @@ fetchHeadlines(initialCategory, { resetPage: true });
 if (typeof window !== 'undefined' && window.process && window.process.env && window.process.env.NODE_ENV === 'test') {
   window._setSavedArticlesForTesting = (articles) => {
     savedArticles = articles;
+    savedArticleUrls = new Set(articles.map((a) => a.url));
   };
   window.isArticleSaved = isArticleSaved;
 }
