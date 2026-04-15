@@ -111,6 +111,10 @@ function isSavedViewActive() {
   return uiState.currentCategory === 'saved';
 }
 
+function isSavedViewActive() {
+  return uiState.currentCategory === 'saved';
+}
+
 function updateMenuToggleIcon() {
   if (!menuToggleButton) return;
   const isOpen = document.body.classList.contains('sidebar-open');
