@@ -39,6 +39,14 @@ function isSavedViewActive() {
   return uiState.currentCategory === 'saved';
 }
 
+function getSourceName(article, fallback = 'Unknown source') {
+  return article.source && article.source.name ? article.source.name : fallback;
+}
+
+function getCategoryTitle(category) {
+  return CATEGORY_TITLES[category] || 'news';
+}
+
 const STORAGE_KEY = 'news-dashboard.saved-articles';
 const LAST_CATEGORY_KEY = 'news-dashboard.last-category';
 
@@ -59,7 +67,7 @@ function safeLocalStorageSet(key, value) {
   }
 }
 
-const MAJOR_US_SOURCES = [
+const MAJOR_US_SOURCES = new Set([
   'CNN',
   'Fox News',
   'The New York Times',
@@ -71,7 +79,7 @@ const MAJOR_US_SOURCES = [
   'USA Today',
   'Reuters',
   'Associated Press'
-].map((name) => name.toLowerCase());
+].map((name) => name.toLowerCase()));
 
 function loadSavedArticles() {
   const raw = safeLocalStorageGet(STORAGE_KEY);
@@ -213,15 +221,14 @@ const createQueryFilter = (query) => {
 
 const createSourceFilter = (filterName) => {
   return (article) => {
-    const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
-    return sourceName === filterName;
+    return getSourceName(article) === filterName;
   };
 };
 
 const createMajorUsFilter = () => {
   return (article) => {
-    const sourceName = article.source && article.source.name ? article.source.name : '';
-    return MAJOR_US_SOURCES.includes(sourceName.toLowerCase());
+    const sourceName = getSourceName(article, '');
+    return MAJOR_US_SOURCES.has(sourceName.toLowerCase());
   };
 };
 
@@ -302,7 +309,7 @@ function updateSourceFilterOptions(articles) {
   const uniqueSources = new Set();
 
   articles.forEach((article) => {
-    const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
+    const sourceName = getSourceName(article);
     uniqueSources.add(sourceName);
   });
 
@@ -315,9 +322,7 @@ function updateSourceFilterOptions(articles) {
   allOption.textContent = 'All sources';
   sourceFilterEl.appendChild(allOption);
 
-  const uniqueSourcesArray = Array.from(uniqueSources);
-
-  uniqueSourcesArray
+  Array.from(uniqueSources)
     .sort()
     .forEach((name) => {
       const option = document.createElement('option');
@@ -336,7 +341,6 @@ function updateSourceFilterOptions(articles) {
 }
 
 function updateLoadMoreVisibility() {
-  // Use helper function isSavedViewActive() instead of manual uiState.currentCategory === 'saved' check to centralize logic
   if (isSavedViewActive()) {
     loadMoreButton.classList.add('load-more-hidden');
     return;
@@ -378,7 +382,7 @@ function renderArticles(articles, { isSavedView = false } = {}) {
     card.className = 'article-card';
 
     const imageUrl = article.urlToImage || '';
-    const sourceName = article.source && article.source.name ? article.source.name : 'Unknown source';
+    const sourceName = getSourceName(article);
     const saved = isArticleSaved(article);
 
     card.innerHTML = `
@@ -440,7 +444,7 @@ async function fetchHeadlines(category, { append = false, resetPage = false } = 
     uiState.currentPage = 1;
   }
 
-  setStatus(`Loading ${CATEGORY_TITLES[category] || 'news'}...`, 'loading');
+  setStatus(`Loading ${getCategoryTitle(category)}...`, 'loading');
 
   if (resetPage) {
     renderSkeletons();
@@ -666,7 +670,8 @@ fetchHeadlines(initialCategory, { resetPage: true });
 if (typeof window !== 'undefined' && window.process && window.process.env && window.process.env.NODE_ENV === 'test') {
   window._setSavedArticlesForTesting = (articles) => {
     savedArticles = articles;
-    savedArticleUrls = new Set(savedArticles.map((a) => a.url));
+    savedArticleUrls = new Set(articles.map((a) => a.url));
   };
   window.isArticleSaved = isArticleSaved;
+  window.__test_getCategoryTitle = getCategoryTitle;
 }
