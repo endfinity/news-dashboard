@@ -13,7 +13,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const NEWSAPI_BASE_URL = 'https://newsapi.org/v2/top-headlines';
-const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
 const METRICS_TOKEN = process.env.METRICS_TOKEN;
 
 const CACHE_TTL_MS = Number.parseInt(process.env.NEWS_CACHE_TTL_MS, 10) || 60_000;
@@ -29,7 +28,6 @@ class LRUCache {
   get(key) {
     const value = this.cache.get(key);
     if (value === undefined) return undefined;
-    // Move accessed item to the end (most recently used)
     this.cache.delete(key);
     this.cache.set(key, value);
     return value;
@@ -39,7 +37,6 @@ class LRUCache {
     if (this.cache.has(key)) {
       this.cache.delete(key);
     } else if (this.cache.size >= this.maxSize) {
-      // Map preserves insertion order, so the first key is the least recently used
       const firstKey = this.cache.keys().next().value;
       this.cache.delete(firstKey);
     }
@@ -55,11 +52,10 @@ class LRUCache {
   entries() { return this.cache.entries(); }
 }
 
-// Bounded LRU cache to prevent memory leaks
 const headlinesCache = new LRUCache(1000);
 
-// Periodically clean up expired cache entries
-setInterval(() => {
+// Periodically clean up expired cache entries to prevent memory leaks
+const cacheCleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [key, value] of headlinesCache.entries()) {
     if (value.expiresAt <= now) {
@@ -67,6 +63,9 @@ setInterval(() => {
     }
   }
 }, Math.max(CACHE_TTL_MS, 60_000));
+
+// Allow clearing the interval for testing
+app.closeCleanupInterval = () => clearInterval(cacheCleanupInterval);
 
 const ipRateLimits = new Map();
 
@@ -80,7 +79,8 @@ const metrics = {
 
 app.set('trust proxy', 1);
 
-if (!NEWSAPI_KEY) {
+if (!process.env.NEWSAPI_KEY) {
+  // eslint-disable-next-line no-console
   console.warn('WARNING: NEWSAPI_KEY is not set. API requests will fail until you configure it.');
 }
 
@@ -101,7 +101,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    hasNewsApiKey: Boolean(NEWSAPI_KEY),
+    hasNewsApiKey: Boolean(process.env.NEWSAPI_KEY),
     environment: process.env.NODE_ENV || 'development'
   };
 
@@ -140,6 +140,8 @@ app.get('/metrics', (req, res) => {
 });
 
 app.get('/api/headlines', async (req, res) => {
+  const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
+
   if (!NEWSAPI_KEY) {
     res.status(500).json({ error: 'NEWSAPI_KEY is not configured on the server.' });
     return;
@@ -240,6 +242,7 @@ app.get('/api/headlines', async (req, res) => {
 
     if (!response.ok) {
       const errorBody = await response.text();
+      // eslint-disable-next-line no-console
       console.error('NewsAPI responded with non-OK status', {
         status: response.status,
         statusText: response.statusText,
@@ -274,6 +277,7 @@ app.get('/api/headlines', async (req, res) => {
     res.setHeader('X-Cache', 'MISS');
     res.json(payload);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error fetching headlines from NewsAPI', {
       message: error.message,
       name: error.name,
@@ -293,6 +297,11 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log(`News dashboard server running at http://localhost:${port}`);
-});
+if (process.argv[1] === __filename) {
+  app.listen(port, () => {
+    // eslint-disable-next-line no-console
+    console.log(`News dashboard server running at http://localhost:${port}`);
+  });
+}
+
+export default app;
